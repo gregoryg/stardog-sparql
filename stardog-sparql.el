@@ -57,23 +57,44 @@
   :group 'stardog-sparql)
 
 
+
+(defun org-babel-sparql--replace-prefix () )
+;; (advice-add #'org-babel-execute:sparql :filter-return #'org-babel-sparql--replace-prefix )
+;; ;; (advice-remove  #'org-babel-execute:sparql #'org-babel-sparql--replace-prefix)
 (defun select-stardog-database (&optional endpoint)
   "Select from a list of databases on current endpoint."
   (interactive)
   (let* ((endpoint (or endpoint (cdr (assoc :server org-babel-default-header-args:sparql))))
-         (databases (get-databases-on-endpoint endpoint)))
-    (when databases
-      (completing-read "Database: " databases))))
+         (databases (get-databases-on-endpoint endpoint))
+         (selected-db (when databases
+                        (completing-read "Database: " databases))))
+    (when selected-db
+      (gjg/set-sparql-header-args endpoint selected-db endpoint))))
+
+(defun get-namespace-for-db (db)
+  "Get list of RDF prefixes in the namespace of the Stardog db.
+The return is a list of CONS cells with the URI as car and the prefix as the cdr.
+This list of CONS cells can be used directly in a post-processing function to transform full IRIs from a query result."
+  (let ((endpoint (cdr (assoc :server org-babel-default-header-args:sparql)) )
+        (default-directory (expand-file-name stardog-commands-host)))
+    (with-connection-local-variables
+     (cons '("rdf:type" . "a")
+           (mapcar #'(lambda (pair)
+                       (cons (cadr pair) (car pair)))
+                   (seq-partition
+                    (s-split "[ \n]"
+                             (s-replace-all '(("PREFIX " . "" ) ("<" . "") (">" . ""))
+                                            (shell-command-to-string (concat stardog-binaries-dir "/stardog namespace export --sparql " endpoint "/" db ))))
+                    2))))))
 
 (defun get-databases-on-endpoint (endpoint)
   "Given a stardog endpoint, return list of databases."
   ;; It would be nice to get a machine-readable list using REST API - but the CLI makes use of =.sdpass= which is what we rely on here
   (let ((default-directory (expand-file-name stardog-commands-host)))
     (with-connection-local-variables
-     ;; (shell-command-to-string "echo Hi - I am on $HOSTNAME"))))
      (split-string (s-trim
-      (s-replace  "|" ""
-                  (shell-command-to-string (concat stardog-binaries-dir "/stardog-admin --server " endpoint " db list | egrep '^\\| [^ ]'|cut -d' ' -f2"))))))))
+                    (s-replace  "|" ""
+                                (shell-command-to-string (concat stardog-binaries-dir "/stardog-admin --server " endpoint " db list | egrep '^\\| [^ ]'|cut -d' ' -f2"))))))))
 
 (defun select-stardog-endpoint ()
   "Set Org Babel headers for SPARQL.   table named `svar` should have these columns: connection-name, base-url, database, api-type"

@@ -32,12 +32,13 @@
 ;; TBD
 
 ;;; Code:
-;; (defgroup stardog-sparql nil
-;;  "Stardog companion for sparql-mode and ob-sparql."
-;;  ;; :group 'stardog-sparql
-;;  ;; :prefix "stardog-sparql"
-;;  :link '(url-link "https://github.com/gregoryg/stardog-sparql"))
+
 (require 'dash)
+
+(defgroup  stardog-sparql nil
+  "Stardog companion for sparql-mode and ob-sparql."
+  :group 'languages)
+
 (defcustom stardog-connections-alist
   nil
   "List of stardog connections "

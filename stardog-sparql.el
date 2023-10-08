@@ -23,7 +23,8 @@
 
 ;;; Commentary:
 
-;; Extenstions to sparql-mode for use with Stardog
+;; Extensions to sparql-mode for use with Stardog
+;;
 
 ;;; Usage:
 
@@ -36,13 +37,13 @@
 ;;  ;; :group 'stardog-sparql
 ;;  ;; :prefix "stardog-sparql"
 ;;  :link '(url-link "https://github.com/gregoryg/stardog-sparql"))
-
+(require 'dash)
 (defcustom stardog-connections-alist
   nil
   "List of stardog connections "
   :type '(alist :key-type (symbol :tag "Connection name")
                 :value-type (list (string :tag "Endpoint URL")
-                                  (string :tag "Database name")))
+                                  (string :tag "Default Database name")))
   :group 'stardog-sparql
   :version "0.1")
 

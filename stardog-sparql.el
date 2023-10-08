@@ -73,9 +73,11 @@
   (let* ((endpoint (or endpoint (cdr (assoc :server org-babel-default-header-args:sparql))))
          (databases (get-databases-on-endpoint endpoint))
          (selected-db (when databases
-                        (completing-read "Database: " databases))))
+                        (completing-read "Database: " databases)))
+         (dbnamespace (get-namespace-for-db selected-db))
+         )
     (when selected-db
-      (gjg/set-sparql-header-args endpoint selected-db endpoint))))
+      (gjg/set-sparql-header-args endpoint selected-db "query" dbnamespace))))
 
 (defun get-namespace-for-db (db)
   "Get list of RDF prefixes in the namespace of the Stardog db.
@@ -84,13 +86,13 @@ This list of CONS cells can be used directly in a post-processing function to tr
   (let ((endpoint (cdr (assoc :server org-babel-default-header-args:sparql)) )
         (default-directory (expand-file-name stardog-commands-host)))
     (with-connection-local-variables
-     (cons '("rdf:type" . "a")
+     (cons '("http://www.w3.org/1999/02/22-rdf-syntax-ns#type" . "a")
            (mapcar #'(lambda (pair)
                        (cons (cadr pair) (car pair)))
                    (seq-partition
                     (s-split "[ \n]"
                              (s-replace-all '(("PREFIX " . "" ) ("<" . "") (">" . ""))
-                                            (shell-command-to-string (concat stardog-binaries-dir "/stardog namespace export --sparql " endpoint "/" db ))))
+                                            (shell-command-to-string (concat stardog-binaries-dir "/stardog namespace export --sparql " endpoint "/" db ))) t)
                     2))))))
 
 (defun get-databases-on-endpoint (endpoint)

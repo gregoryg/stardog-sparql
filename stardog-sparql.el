@@ -48,6 +48,7 @@
   :group 'stardog-sparql
   :version "0.1")
 
+;; TODO: Switch to use either 'local (or "localhost") OR a TRAMP string path (VALUE Menu option in Customize)
 (defcustom stardog-commands-host "localhost"
   "The host where the Stardog binaries can be found. A TRAMP host URL could be something like /kube:stardog-stardog-0:"
   :type 'string

@@ -115,62 +115,20 @@ This list of CONS cells can be used directly in a post-processing function to tr
   "Set Org Babel headers for SPARQL.   table named `svar` should have these columns: connection-name, base-url, database, api-type"
   (interactive)
   (let* ((marginalia-align-offset 80)
-         (completion-extra-properties '(:annotation-function gjg/annotate-sparql-selection))
-         (myconnection (assoc (intern (completing-read "SPARQL Server name: " gjg/stardog-connections-alist)) gjg/stardog-connections-alist))
+         (completion-extra-properties '(:annotation-function annotate-sparql-selection))
+         (myconnection (assoc (intern (completing-read "SPARQL Server name: " stardog-connections-alist)) stardog-connections-alist))
          (connection-name (nth 0 myconnection))
          (url (nth 1 myconnection))
          (db (nth 2 myconnection))
          (api-type "query"))
     ;; (message (format "I will surely set sparql header args to %s %s %s %s" connection-name url db api-type))
-    (gjg/set-sparql-header-args url db api-type)))
+    (set-sparql-header-args url db api-type)))
 
-(defun gjg/handle-stardog-result (status &optional output-buffer)
-  "Handle it!"
-  (message "Status is %s" status)
-  (when (zerop (buffer-size))
-    (error "URL '%s' is not accessible" (url-recreate-url url-current-object)))
-  (let ((results-buffer (current-buffer))
-        (response (url-http-parse-response)))
-    ;; (with-current-buffer (get-buffer-create "zgrego")
-    ;; (with-temp-buffer
-    (with-current-buffer output-buffer
-      (let ((buffer-read-only nil))
-        (erase-buffer)
-        (if (and (<= 200 response) (<= response 299))
-            (url-insert results-buffer)
-          (insert-buffer-substring results-buffer))
-        ;; (message "I got these databases %s" response ))
-        (goto-char 0)
-        (completing-read "Ohai: "
-                         (append (cdr (assq 'databases (json-read))) nil))))))
-
-(defun gjg/stardog-get-databases (server)
-  "Get list of databases from the Stardog server - will work for users with admin rights"
-  ;; (url-retrieve (concat server "/admin/databases") #'gjg/handle-stardog-result )
-  (url-retrieve (concat (replace-regexp-in-string "/+$" "" server) "/admin/databases") #'gjg/handle-stardog-result (list (current-buffer)))
-  (url-retrieve (concat (replace-regexp-in-string "/+$" "" server) "/admin/databases") #'gjg/handle-stardog-result))
-
-(defun gjg/stardog-build-url (arg &optional server database api-endpoint reasoning  )
-  "Create a Stardog specific URL for use with Stardog Platform API.  Support query and update endpoints as well as reasoning"
-  (interactive "P")
-  (let* ((server (or server
-                     (cdr (assoc :server (gjg/set-sparql-headers)))))
-         (database (or database (completing-read "Database name: " '("this" "thag"))))
-         (api-endpoint (if arg "update" "query")))
-    (message
-     (format "%s/%s/%s"
-             server
-             database
-             api-endpoint
-             (when (and (not arg) (string= "query" api-endpoint)) "?reasoning=true")))))
-(make-obsolete #'gjg/stardog-build-url #'select-stardog-endpoint "2023-10-01")
-
-;; TODO: this is a test of magit-todos with comment prior to defun
-(defun gjg/set-sparql-header-args (url db &optional api-endpoint dbnamespace)
+(defun set-sparql-header-args (url db &optional api-endpoint dbnamespace)
   "Set local buffer header args for SPARQL."
   ;; TODO: assq-delete only the one or 2 things I want to replace
   (let* ((api-endpoint (or api-endpoint "query"))
-         (dbnamespace (or dbnamespace (assq :dbnamespace org-babel-default-header-args:sparql)))
+         (dbnamespace (or dbnamespace (cdr (assq :dbnamespace org-babel-default-header-args:sparql))))
          (url (replace-regexp-in-string "//+$" "" url))
          (fullurl (concat url "/" db "/" api-endpoint  )))
     ;; (message "My lovely url is %s\n" fullurl)
@@ -187,17 +145,7 @@ This list of CONS cells can be used directly in a post-processing function to tr
                      (cons `(:server . ,url))
                      (cons `(:url . ,fullurl))))))
 
-                ;; (cons `(:server . ,url)
-                ;;       (cons `(:url  . ,fullurl)
-                ;;             (assq-delete-all :url org-babel-default-header-args:sparql))))))
-
-
-(defun gjg/set-stardog-bash-header-args (tramp-path )
-  (setq-local org-babel-default-header-args:bash
-              (cons `(:dir . ,tpath)
-                    (assq-delete-all :dir org-babel-default-header-args:bash))))
-
-(defun gjg/annotate-sparql-selection (s)
+(defun annotate-sparql-selection (s)
   "Provide annotations for completing-read using the data in a SPARQL Stardog server table"
   ;; (message (format "DEBUG: stardog list |%s|, table |%s}" s minibuffer-completion-table))
   (let* ((item (assoc (intern s) minibuffer-completion-table))
@@ -210,18 +158,4 @@ This list of CONS cells can be used directly in a post-processing function to tr
                 displayurl
                 (string-pad "" (- 55 (string-width displayurl)))
                 db))))
-
-(defun gjg/set-sparql-headers ()
-  "Set Org Babel headers for SPARQL.   table named `svar` should have these columns: connection-name, base-url, database, api-type"
-  (interactive)
-  (let* ((marginalia-align-offset 80)
-         (completion-extra-properties '(:annotation-function gjg/annotate-sparql-selection))
-         (myconnection (assoc (intern (completing-read "SPARQL Server name: " gjg/stardog-connections-alist)) gjg/stardog-connections-alist))
-         (connection-name (nth 0 myconnection))
-         (url (nth 1 myconnection))
-         (db (nth 2 myconnection))
-         (api-type "query"))
-    ;; (message (format "I will surely set sparql header args to %s %s %s %s" connection-name url db api-type))
-    (gjg/set-sparql-header-args url db api-type)))
-(make-obsolete #'gjg/set-sparql-headers #'gjg/set-sparql-header-args')
 (provide 'stardog-sparql)

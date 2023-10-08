@@ -76,15 +76,19 @@
                         (completing-read "Database: " databases)))
          (dbnamespace (get-namespace-for-db selected-db))
          )
-    (when selected-db
-      (gjg/set-sparql-header-args endpoint selected-db "query" dbnamespace))))
+    (if selected-db
+        (set-sparql-header-args endpoint selected-db "query" dbnamespace)
+      (message "Cannot get list of databases from %s - check endpoint and .sdpass" endpoint))))
 
 (defun get-namespace-for-db (db)
   "Get list of RDF prefixes in the namespace of the Stardog db.
 The return is a list of CONS cells with the URI as car and the prefix as the cdr.
 This list of CONS cells can be used directly in a post-processing function to transform full IRIs from a query result."
   (let ((endpoint (cdr (assoc :server org-babel-default-header-args:sparql)) )
-        (default-directory (expand-file-name stardog-commands-host)))
+         (default-directory (if (file-remote-p stardog-commands-host)
+                      (expand-file-name stardog-commands-host)
+                    "/tmp")) ;; assume localhost for non-tramp
+)
     (with-connection-local-variables
      (cons '("http://www.w3.org/1999/02/22-rdf-syntax-ns#type" . "a")
            (mapcar #'(lambda (pair)
@@ -98,7 +102,9 @@ This list of CONS cells can be used directly in a post-processing function to tr
 (defun get-databases-on-endpoint (endpoint)
   "Given a stardog endpoint, return list of databases."
   ;; It would be nice to get a machine-readable list using REST API - but the CLI makes use of =.sdpass= which is what we rely on here
-  (let ((default-directory (expand-file-name stardog-commands-host)))
+  (let ((default-directory   (if (file-remote-p stardog-commands-host)
+                      (expand-file-name stardog-commands-host)
+                    "/tmp")))
     (with-connection-local-variables
      (split-string (s-trim
                     (s-replace  "|" ""

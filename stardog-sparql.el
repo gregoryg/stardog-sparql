@@ -1,5 +1,4 @@
-;;; TODO: fix pre-code comments
-;;; sparql-mode.el --- Edit and interactively evaluate SPARQL queries.
+;;; stardog-sparql.el --- Interactively run Stardog SPARQL queries.
 
 ;; Copyright (C) 2023       Gregory Grubbs
 
@@ -32,8 +31,6 @@
 ;; TBD
 
 ;;; Code:
-;; TODO: create function to change just the database
-;; TODO: create function select database after querying server ( /admin/databases)
 ;; (defgroup stardog-sparql nil
 ;;  "Stardog companion for sparql-mode and ob-sparql."
 ;;  ;; :group 'stardog-sparql
@@ -176,3 +173,5 @@
          (api-type "query"))
     ;; (message (format "I will surely set sparql header args to %s %s %s %s" connection-name url db api-type))
     (gjg/set-sparql-header-args url db api-type)))
+
+(provide 'stardog-sparql)

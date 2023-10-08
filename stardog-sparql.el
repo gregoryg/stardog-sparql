@@ -156,20 +156,34 @@ This list of CONS cells can be used directly in a post-processing function to tr
              database
              api-endpoint
              (when (and (not arg) (string= "query" api-endpoint)) "?reasoning=true")))))
+(make-obsolete #'gjg/stardog-build-url #'select-stardog-endpoint "2023-10-01")
 
-(defun gjg/set-sparql-header-args (url db endpoint)
+;; TODO: this is a test of magit-todos with comment prior to defun
+(defun gjg/set-sparql-header-args (url db &optional api-endpoint dbnamespace)
   "Set local buffer header args for SPARQL."
-  (let* ((url (replace-regexp-in-string "//+$" "" url))
-         (fullurl (concat url "/" db "/" endpoint "/" )))
+  ;; TODO: assq-delete only the one or 2 things I want to replace
+  (let* ((api-endpoint (or api-endpoint "query"))
+         (dbnamespace (or dbnamespace (assq :dbnamespace org-babel-default-header-args:sparql)))
+         (url (replace-regexp-in-string "//+$" "" url))
+         (fullurl (concat url "/" db "/" api-endpoint  )))
     ;; (message "My lovely url is %s\n" fullurl)
     (let ((myheader
            (add-to-list 'org-babel-default-header-args:sparql
                         `(:server . url )
                         ))))
     (setq-local org-babel-default-header-args:sparql
-                (cons `(:server . ,url)
-                      (cons `(:url  . ,fullurl)
-                            (assq-delete-all :url org-babel-default-header-args:sparql))))))
+                (->> org-babel-default-header-args:sparql
+                     (assq-delete-all :server)
+                     (assq-delete-all :url)
+                     (assq-delete-all :dbnamespace)
+                     (cons `(:dbnamespace . ,dbnamespace))
+                     (cons `(:server . ,url))
+                     (cons `(:url . ,fullurl))))))
+
+                ;; (cons `(:server . ,url)
+                ;;       (cons `(:url  . ,fullurl)
+                ;;             (assq-delete-all :url org-babel-default-header-args:sparql))))))
+
 
 (defun gjg/set-stardog-bash-header-args (tramp-path )
   (setq-local org-babel-default-header-args:bash
@@ -202,5 +216,5 @@ This list of CONS cells can be used directly in a post-processing function to tr
          (api-type "query"))
     ;; (message (format "I will surely set sparql header args to %s %s %s %s" connection-name url db api-type))
     (gjg/set-sparql-header-args url db api-type)))
-
+(make-obsolete #'gjg/set-sparql-headers #'gjg/set-sparql-header-args')
 (provide 'stardog-sparql)

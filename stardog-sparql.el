@@ -59,9 +59,14 @@
 
 
 
-(defun org-babel-sparql--replace-prefix () )
-;; (advice-add #'org-babel-execute:sparql :filter-return #'org-babel-sparql--replace-prefix )
-;; ;; (advice-remove  #'org-babel-execute:sparql #'org-babel-sparql--replace-prefix)
+(defun org-babel-sparql--replace-prefix (query-result)
+  ;; (message "%s" query-result)
+  (let ((dbnamespace (cdr (assq :dbnamespace org-babel-default-header-args:sparql))))
+    (-tree-map (lambda (s) (if (stringp s) (s-replace-all dbnamespace s) s)) query-result)))
+
+(advice-add #'org-babel-execute:sparql :filter-return #'org-babel-sparql--replace-prefix )
+;; (advice-remove  #'org-babel-execute:sparql #'org-babel-sparql--replace-prefix)
+
 (defun select-stardog-database (&optional endpoint)
   "Select from a list of databases on current endpoint."
   (interactive)
